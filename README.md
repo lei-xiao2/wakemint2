@@ -65,15 +65,8 @@ To test a specifc function, use `-fselector` to specifiy the function selector (
 python3 tool.py -s test/EvohFixedMint.sol -cnames EvohFixedMint -fselector 23b872dd -as
 ```
 
-For solidity project. Remember to use remap to link the outside libraries (openzeppelin, etc).
 
-```sh
-python3 tool.py -s "path/to/.sol" -rmp "remapping/import_lib/path" -cnames "contract name"
-# example
-python3 tool.py -s test/8liens/contracts/8liens/8liensMinter.sol -rmp erc721a=test/8liens/erc721a @openzeppelin=test/8liens/@openzeppelin -cnames \$8liensMinter -ll 50 -glt 60
-```
-
-Other utils: contract/project source code crawler (with complete code structure) from EtherScan. See <a href='./crawler/crawl.py'>crawler.py</a>. The utils can help recover the original structure of the DApp contracts to be fed into WakeMint with remap configuration.
+Other utils: contract/project source code crawler (with complete code structure) from EtherScan. See <a href='./crawler/crawl.py'>crawler.py</a>.
 
 ```sh
 python3 crawl.py --dir ./0x --caddress 0x # 0x is the contract address
