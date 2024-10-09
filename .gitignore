@@ -29,3 +29,17 @@ web/vendor/
 __pycache__
 
 local_test/
+
+dataset/
+dataset1/
+dataset2/
+defects_definition/
+
+/.json
+/draft.py
+/test.py
+/test_record.txt
+/test_record_all_contract.txt
+/test_record copy.txt
+/experiment_result.txt
+/requirements copy.txt

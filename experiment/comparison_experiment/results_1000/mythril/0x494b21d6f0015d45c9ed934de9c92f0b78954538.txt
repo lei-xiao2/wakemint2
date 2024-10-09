@@ -1,3 +1,0 @@
-mythril.interfaces.cli [ERROR]: Solc experienced a fatal error.
-
-Cannot import url ("/tmp/d69285ee3e357afde2b7b5cb7c40f540.sol"): File outside of allowed directories.

@@ -23,6 +23,7 @@ from cfg_builder.vargenerator import *
 from defect_identifier.defect import *
 from defect_identifier.identifier import Identifier
 from feature_detector.semantic_analysis import *
+from feature_detector.sleepmint_analysis import *
 
 # Initiate table for live print.
 console = Console()
@@ -59,17 +60,10 @@ def dynamic_defect_identification(g_src_map, global_problematic_pcs):
     violation = ViolationDefect(g_src_map, global_problematic_pcs["violation_defect"])
     return proxy, reentrancy, unlimited_minting, violation, public_burn
 
-
 def generate_table(
     opcode, block_cov, pc, perc, g_src_map, global_problematic_pcs, current_func_name
 ) -> Table:
-    (
-        proxy,
-        reentrancy,
-        unlimited_minting,
-        violation,
-        public_burn,
-    ) = dynamic_defect_identification(g_src_map, global_problematic_pcs)
+
     """Make a new table for live presentation
 
     Returns:
@@ -77,25 +71,13 @@ def generate_table(
     """
     defect_table = Table(box=box.SIMPLE)
 
-    defect_table.add_column("Defect", justify="right", style="bold", no_wrap=True)
-    defect_table.add_column("Status", style="green")
-    defect_table.add_column("Location", justify="left", style="cyan")
+    defect_table.add_column("Defect", justify="center", style="bold", no_wrap=True)
 
-    defect_table.add_row("Risky Mutable Proxy", str(proxy.is_defective()), str(proxy))
-    defect_table.add_row(
-        "ERC-721 Reentrancy", str(reentrancy.is_defective()), str(reentrancy)
-    )
-    defect_table.add_row(
-        "Unlimited Minting",
-        str(unlimited_minting.is_defective()),
-        str(unlimited_minting),
-    )
-    defect_table.add_row(
-        "Missing Requirements", str(violation.is_defective()), str(violation)
-    )
-    defect_table.add_row(
-        "Public Burn", str(public_burn.is_defective()), str(public_burn)
-    )
+    defect_table.add_row("Privileged Address")
+    defect_table.add_row("Unrestricted 'from'")
+    defect_table.add_row("Owner Inconsistency")
+    defect_table.add_row("Empty Transfer Event")
+
     end = time.time()
 
     time_coverage_table = Table(box=box.SIMPLE)
@@ -128,11 +110,85 @@ def generate_table(
     state_table.add_row(time_coverage_table)
     state_table.add_row(block_table)
 
-    reporter = Table(box=box.ROUNDED, title="NFTGuard GENESIS v0.0.1")
+    reporter = Table(box=box.ROUNDED, title="WakeMint GENESIS v0.0.1")
     reporter.add_column("Defect Detection", justify="center")
     reporter.add_column("Execution States", justify="center")
     reporter.add_row(defect_table, state_table)
     return reporter
+
+# def generate_table(
+#     opcode, block_cov, pc, perc, g_src_map, global_problematic_pcs, current_func_name
+# ) -> Table:
+#     (
+#         proxy,
+#         reentrancy,
+#         unlimited_minting,
+#         violation,
+#         public_burn,
+#     ) = dynamic_defect_identification(g_src_map, global_problematic_pcs)
+#     """Make a new table for live presentation
+
+#     Returns:
+#         table: table for live show
+#     """
+#     defect_table = Table(box=box.SIMPLE)
+
+#     defect_table.add_column("Defect", justify="right", style="bold", no_wrap=True)
+#     defect_table.add_column("Status", style="green")
+#     defect_table.add_column("Location", justify="left", style="cyan")
+
+#     defect_table.add_row("Risky Mutable Proxy", str(proxy.is_defective()), str(proxy))
+#     defect_table.add_row(
+#         "ERC-721 Reentrancy", str(reentrancy.is_defective()), str(reentrancy)
+#     )
+#     defect_table.add_row(
+#         "Unlimited Minting",
+#         str(unlimited_minting.is_defective()),
+#         str(unlimited_minting),
+#     )
+#     defect_table.add_row(
+#         "Missing Requirements", str(violation.is_defective()), str(violation)
+#     )
+#     defect_table.add_row(
+#         "Public Burn", str(public_burn.is_defective()), str(public_burn)
+#     )
+#     end = time.time()
+
+#     time_coverage_table = Table(box=box.SIMPLE)
+#     time_coverage_table.add_column(
+#         "Time", justify="left", style="cyan", no_wrap=True, width=8
+#     )
+#     time_coverage_table.add_column(
+#         "Code Coverage", justify="left", style="yellow", no_wrap=True
+#     )
+#     time_coverage_table.add_column(
+#         "Block Coverage", justify="left", style="yellow", no_wrap=True
+#     )
+#     time_coverage_table.add_row(
+#         str(round(end - begin, 1)), str(round(perc, 1)), str(round(block_cov, 1))
+#     )
+
+#     block_table = Table(box=box.SIMPLE)
+#     block_table.add_column("PC", justify="left", style="cyan", no_wrap=True, width=8)
+#     block_table.add_column(
+#         "Opcode", justify="left", style="yellow", no_wrap=True, width=8
+#     )
+#     block_table.add_column(
+#         "Current Function", justify="left", style="yellow", no_wrap=True, min_width=19
+#     )
+
+#     block_table.add_row(str(pc), opcode, current_func_name)
+
+#     state_table = Table.grid(expand=True)
+#     state_table.add_column(justify="center")
+#     state_table.add_row(time_coverage_table)
+#     state_table.add_row(block_table)
+
+#     reporter = Table(box=box.ROUNDED, title="WakeMint GENESIS v0.0.1")
+#     reporter.add_column("Defect Detection", justify="center")
+#     reporter.add_column("Execution States", justify="center")
+#     reporter.add_row(defect_table, state_table)
+#     return reporter
 
 
 class Parameter:
@@ -193,18 +249,14 @@ def initGlobalVars():
             "instructions": "",
             "time": "",
             "analysis": {
-                "proxy": [],
-                "burn": [],
-                "reentrancy": [],
-                "unlimited_minting": [],
-                "violation": [],
+                "privileged_address": [],
+                "unrestricted_from_and_owner_inconsistency": [],
+                "empty_transfer_event": [],
             },
             "bool_defect": {
-                "proxy": False,
-                "burn": False,
-                "reentrancy": False,
-                "unlimited_minting": False,
-                "violation": False,
+                "privileged_address": False,
+                "unrestricted_from_and_owner_inconsistency": False,
+                "empty_transfer_event": False
             },
         }
     else:
@@ -213,11 +265,9 @@ def initGlobalVars():
             "instructions": "",
             "time": "",
             "bool_defect": {
-                "proxy": False,
-                "burn": False,
-                "reentrancy": False,
-                "unlimited_minting": False,
-                "violation": False,
+                "privileged_address": False,
+                "unrestricted_from_and_owner_inconsistency": False,
+                "empty_transfer_event": False
             },
         }
 
@@ -261,12 +311,17 @@ def initGlobalVars():
 
     global global_problematic_pcs  # for different defects
     global_problematic_pcs = {
-        "proxy_defect": [],
-        "burn_defect": [],
-        "reentrancy_defect": [],
-        "unlimited_minting_defect": [],
-        "violation_defect": [],
+        "privileged_address": [],
+        "unrestricted_from_and_owner_inconsistency": [],
+        "empty_transfer_event": [],
     }
+    # global_problematic_pcs = {
+    #     "proxy_defect": [],
+    #     "burn_defect": [],
+    #     "reentrancy_defect": [],
+    #     "unlimited_minting_defect": [],
+    #     "violation_defect": [],
+    # }
 
     # store global variables, e.g. storage, balance of all paths
     global all_gs
@@ -369,6 +424,8 @@ def mapping_push_instruction(
                         idx += 1
                         break
                     else:
+                        # print(idx, positions[idx])
+                        # print(value, instr_value, current_line_content)
                         raise Exception("Source map error")
                 else:
                     g_src_map.instr_positions[current_ins_address] = (
@@ -440,6 +497,25 @@ def collect_vertices(tokens):
     for tok_type, tok_string, (srow, scol), _, line_number in tokens:
         if wait_for_push is True:
             push_val = ""
+            if current_line_content == "PUSH0 " and tok_type == NEWLINE:
+                is_new_line = True
+                current_line_content += "0 "
+                instructions[current_ins_address] = current_line_content
+                idx = (
+                        mapping_push_instruction(
+                        current_line_content,
+                        current_ins_address,
+                        idx,
+                        positions,
+                        length,
+                    )
+                    if g_src_map
+                    else None
+                )
+                current_line_content = ""
+                wait_for_push = False
+                continue
+
             for ptok_type, ptok_string, _, _, _ in tokens:
                 if ptok_type == NEWLINE:
                     is_new_line = True
@@ -779,6 +855,37 @@ def get_start_block_to_func_sig():
 
 
 def full_sym_exec():
+    global results
+    global _from
+    global _to
+    global _tokenId
+    global count
+    global owner
+    global return_owner
+    global test_results
+    global pre_func_name
+    global sstore_mark
+    global ERC721A_load_type
+    global ERC721Pausable_trait
+    ERC721Pausable_trait = False
+    ERC721A_load_type = False
+    sstore_mark = False
+    test_results = [[0], [0], [0]]
+    pre_func_name = ""
+    _from = _to = _tokenId = owner = None
+    count = 0
+
+    # find expression of return_owner in AST
+    try:
+        if global_params.IS_LOW_VERSION:
+            return_owner = find_return_owner_LV()
+        else:
+            return_owner = find_return_owner()
+    except:
+        return_owner = "return owner"
+    if return_owner == None:
+        return_owner = "return owner"
+
     # executing, starting from beginning
     path_conditions_and_vars = {"path_condition": []}
     global_state = get_init_global_state(path_conditions_and_vars)
@@ -788,18 +895,106 @@ def full_sym_exec():
         global_state=global_state,
         analysis=analysis,
     )
-    start_block = 0
+    # start_block = 0
+    # if g_src_map:
+    #     start_block_to_func_sig = get_start_block_to_func_sig()
+    #     logging.info(start_block_to_func_sig)
+    #     if global_params.TARGET_FUNCTION:
+    #         start_block = list(start_block_to_func_sig.keys())[
+    #             list(start_block_to_func_sig.values()).index(
+    #                 global_params.TARGET_FUNCTION
+    #             )
+    #         ]
+    # with live:
+    #     sym_exec_block(params, start_block, 0, 0, -1, "fallback")
+    
+    start_blocks = []
     if g_src_map:
         start_block_to_func_sig = get_start_block_to_func_sig()
         logging.info(start_block_to_func_sig)
         if global_params.TARGET_FUNCTION:
-            start_block = list(start_block_to_func_sig.keys())[
+            start_blocks.append(list(start_block_to_func_sig.keys())[
                 list(start_block_to_func_sig.values()).index(
                     global_params.TARGET_FUNCTION
                 )
-            ]
+            ])
+        # To reduce the running time 
+        # select those functions which contain "emit Trnasfer" instead of checking all the functions in contract
+        else:
+            try:
+                if global_params.IS_LOW_VERSION:
+                    target_functions = get_target_functions_LV(g_src_map.cname)
+                else:
+                    target_functions = get_target_functions(g_src_map.cname)
+                for function in target_functions:
+                    for func_sig in g_src_map.sig_to_func:
+                        if function in g_src_map.sig_to_func[func_sig]:
+                            try:
+                                start_blocks.append(list(start_block_to_func_sig.keys())[
+                                    list(start_block_to_func_sig.values()).index(
+                                        func_sig
+                                    )
+                                ])
+                            except Exception as e:
+                                print(e)
+            except Exception as e:
+                print(e)
+            try:
+                defualt_block = list(start_block_to_func_sig.keys())[
+                    list(start_block_to_func_sig.values()).index("23b872dd")]
+                if defualt_block not in start_blocks:
+                    start_blocks.insert(0, defualt_block)
+            except:
+                pass
+
     with live:
-        return sym_exec_block(params, start_block, 0, 0, -1, "fallback")
+        for start_block in start_blocks:
+            pre_length3 = len(test_results[2])
+            sym_exec_block(params, start_block, 0, 0, -1, "fallback")
+            if len(test_results[2]) > pre_length3 and sstore_mark:
+                for i in range(pre_length3, len(test_results[2])):
+                    if test_results[2][i].split(":")[1] == "standard1":
+                        test_results[2].pop(i)
+                        break
+                if len(test_results[2]) == 1:
+                    test_results[2][0] = 0
+            # print("return_owner: ", return_owner)
+            # print("_from: ", _from)
+            # print("_to: ", _to)
+            # print("_tokenId: ", _tokenId)
+            # print("owner: ", owner)
+
+        if not start_blocks:
+            test_results = [[-1], [-1], [-1]]
+        elif owner == None:
+            test_results[0] = [-2]
+            test_results[1] = [-2]
+        elif ERC721A_load_type:
+            test_results[1] = [0]
+        if "ERC721Pausable" in g_src_map.source.content and len(test_results[1]) > 1:
+            for i in range(1, len(test_results[1])):
+                var_name = test_results[1][i].split(":")[1].split("-")[-1]
+                if var_name == "_owner" and ERC721Pausable_trait:
+                    test_results[1].remove(test_results[1][i])
+            if len(test_results[1]) == 1:
+                test_results[1][0] = 0
+        # with open("test_record.txt", 'a+', encoding="utf-8") as f:
+        #     content = str(test_results) + ", "
+        #     f.write(content)
+        for i in range(3):
+            if test_results[i][0] == 1:
+                if i == 0:
+                    results["bool_defect"]["unrestricted_from_and_owner_inconsistency"] = True
+                    for j in range(1, len(test_results[i])):
+                        results["analysis"]["unrestricted_from_and_owner_inconsistency"].append(test_results[i][j])
+                elif i == 1:
+                    results["bool_defect"]["privileged_address"] = True
+                    for j in range(1, len(test_results[i])):
+                        results["analysis"]["privileged_address"].append(test_results[i][j])
+                elif i == 2:
+                    results["bool_defect"]["empty_transfer_event"] = True
+                    for j in range(1, len(test_results[i])):
+                        results["analysis"]["empty_transfer_event"].append(test_results[i][j])
 
 
 # Symbolically executing a block from the start address
@@ -812,6 +1007,17 @@ def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name
     global all_gs
     global results
     global g_src_map
+    global _from
+    global _to
+    global _tokenId
+    global count
+    global owner
+    global return_owner
+    global pre_func_name
+    global sstore_mark
+    global current_func
+    global ERC721A_load_type
+    global ERC721Pausable_trait
 
     visited = params.visited
     stack = params.stack
@@ -823,6 +1029,13 @@ def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name
     analysis = params.analysis
     calls = params.calls
 
+    if current_func_name != pre_func_name:
+        # print(pre_func_name, current_func_name, block)
+        count = 0
+        pre_func_name = current_func_name
+        sstore_mark = False
+    # if current_func_name == "assertOwnership":
+    #     print("pause")
     # Factory Function for tuples is used as dictionary key
     Edge = namedtuple("Edge", ["v1", "v2"])
     if block < 0:
@@ -835,6 +1048,8 @@ def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name
         if block in start_block_to_func_sig:
             func_sig = start_block_to_func_sig[block]
             current_func_name = g_src_map.sig_to_func[func_sig]
+            # print(current_func_name)
+            current_func = current_func_name
             pattern = r"(\w[\w\d_]*)\((.*)\)$"
             match = re.match(pattern, current_func_name)
             if match:
@@ -863,9 +1078,36 @@ def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name
     except KeyError:
         log.debug("This path results in an exception, possibly an invalid jump address")
         return ["ERROR"]
-
     for instr in block_ins:
+        source_code = g_src_map.get_source_code(global_state["pc"])
+        instr = instr.strip()
         sym_exec_ins(params, block, instr, func_call, current_func_name)
+        # print(instr, source_code)
+        if source_code == 'require(!paused(), "ERC721Pausable: token transfer while paused")':
+            ERC721Pausable_trait = True
+        # if source_code == "_tokenOwner[tokenId] = to":
+        #     print("-------------------------------------------------------")
+        #     print(block, block_ins, len(block_ins))
+        #     if "LOG4 " in block_ins:
+        #         print("LOG4 exists.")
+        #     print("-------------------------------------------------------")
+        # if "_owner" in source_code:
+        #     print(instr, source_code)
+        # ERC721A
+        if source_code == return_owner or  source_code == "prevOwnership.addr" or source_code == "return packed":
+            owner = stack[0]
+            # print("hello", source_code, owner)
+        elif (source_code == "result := or(eq(msgSender, owner), eq(msgSender, approvedAddress))" or
+              source_code == "result := or(eq(msgSender, from), eq(msgSender, approvedAddress))"):
+            ERC721A_load_type = True
+            # print(owner)
+            # print("owner: ", owner)
+        # if "require(_ownerOf(tokenId) == from" in source_code:
+        #     print("----------------------------------------------------")
+        #     print(solver)
+        #     print("----------------------------------------------------")
+        # elif source_code == "msg.sender == c_owner":
+        #     print(stack)
 
     # Mark that this basic block in the visited blocks
     visited.append(block)
@@ -919,18 +1161,21 @@ def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name
         # A choice point, we proceed with depth first search
 
         branch_expression = vertices[block].get_branch_expression()
-
+        
         log.debug("Branch expression: " + str(branch_expression))
         # log.info("Branch expression: " + str(branch_expression))
 
         solver.push()  # SET A BOUNDARY FOR SOLVER
         solver.add(branch_expression)
-
+        # if current_func_name == "transferFrom":
+        #     print("-------------------------2-----------------------------")
+        #     print(solver)
         try:
             if solver.check() == unsat:
                 log.debug("INFEASIBLE PATH DETECTED")
             else:
                 left_branch = vertices[block].get_jump_target()
+                
                 new_params = params.copy()
                 new_params.global_state["pc"] = left_branch
                 new_params.path_conditions_and_vars["path_condition"].append(
@@ -995,6 +1240,15 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     global g_slot_map
     global calls_affect_state
     global instructions
+    global _from
+    global _to
+    global _tokenId
+    global count
+    global owner
+    global return_owner
+    global test_results
+    global sstore_mark
+    global current_func
 
     stack = params.stack
     mem = params.mem
@@ -1009,31 +1263,32 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     visited_pcs.add(global_state["pc"])
 
     instr_parts = str.split(instr, " ")
+    
     opcode = instr_parts[0]
 
     if opcode == "INVALID":
         return
     elif opcode == "ASSERTFAIL":
         return
-
     # collecting the analysis result by calling this skeletal function
     # this should be done before symbolically executing the instruction,
     # since SE will modify the stack and mem
-    semantic_analysis(
-        analysis,
-        opcode,
-        stack,
-        mem,
-        global_state,
-        global_problematic_pcs,
-        current_func_name,
-        g_src_map,
-        path_conditions_and_vars,
-        solver,
-        instructions,
-        g_slot_map,
-    )
-
+    # semantic_analysis(
+    #     analysis,
+    #     opcode,
+    #     stack,
+    #     mem,
+    #     global_state,
+    #     global_problematic_pcs,
+    #     current_func_name,
+    #     g_src_map,
+    #     path_conditions_and_vars,
+    #     solver,
+    #     instructions,
+    #     g_slot_map,
+    # )
+    sleepmint_analysis(opcode, stack, solver, _from, owner, test_results, sstore_mark, current_func)
+    
     # block coverage
     total_blocks = len(vertices)
     visited_blocks.add(block)
@@ -1062,6 +1317,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     #
     #  0s: Stop and Arithmetic Operations
     #
+    
     if opcode == "STOP":
         global_state["pc"] = global_state["pc"] + 1
         return
@@ -1685,6 +1941,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
         # that is directly responsible for this execution
         global_state["pc"] = global_state["pc"] + 1
         stack.insert(0, global_state["sender_address"])
+        # print("CALLER: ", stack)
     elif opcode == "ORIGIN":  # get execution origination address
         global_state["pc"] = global_state["pc"] + 1
         stack.insert(0, global_state["origin"])
@@ -1720,6 +1977,13 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                 new_var = BitVec(new_var_name, 256)
                 path_conditions_and_vars[new_var_name] = new_var
             stack.insert(0, new_var)
+            count += 1
+            if count == 1:
+                _from = stack[0]
+            elif count == 2:
+                _to = stack[0]
+            elif count == 3:
+                _tokenId = stack[0]
         else:
             raise ValueError("STACK underflow")
     elif opcode == "CALLDATASIZE":
@@ -2049,10 +2313,12 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
                         global_state["Ia"][str(position)] = new_var
             if global_state["burn"]["hash"] != None:
                 global_state["burn"]["sload"] = stack[0]
+            # print("SLOAD: ", stack[0])
         else:
             raise ValueError("STACK underflow")
 
     elif opcode == "SSTORE":
+        sstore_mark = True
         if len(stack) > 1:
             for call_pc in calls:
                 calls_affect_state[call_pc] = True
@@ -2650,3 +2916,4 @@ def run(disasm_file=None, source_file=None, source_map=None, slot_map=None):
             g_disasm_file,
         )
         return ret
+    

@@ -55,7 +55,7 @@ class InputHelper:
                 - "slot_map": The slot map for the contract.
         """
         inputs = []
-
+        
         # adapt to the new version of crytic which supports solc 0.8.x
         # make NFTGuard capable of analyzing contracts with a higher solc version
         contracts = self._get_compiled_contracts()
@@ -89,6 +89,7 @@ class InputHelper:
             )
             logging.info("contract:" + contract)
         if targetContracts is not None and not inputs:
+            print(targetContracts)
             raise ValueError("Targeted contracts weren't found in the source code!")
         return inputs
 

@@ -10,6 +10,9 @@ from defect_identifier.defect import (
     RiskyProxyDefect,
     UnlimitedMintingDefect,
     ViolationDefect,
+    PrivilegedAddressDefect,
+    UnrestrictedFromDefect,
+    EmptyTransferEventDefect,
 )
 
 log = logging.getLogger(__name__)
@@ -36,13 +39,19 @@ class Identifier:
             end = time.time()
 
             # *All Defects to be detectd...
-            self.detect_violation(self, results, g_src_map, global_problematic_pcs)
-            self.detect_reentrancy(self, results, g_src_map, global_problematic_pcs)
-            self.detect_proxy(self, results, g_src_map, global_problematic_pcs)
-            self.detect_unlimited_minting(
-                self, results, g_src_map, global_problematic_pcs
-            )
-            self.detect_public_burn(self, results, g_src_map, global_problematic_pcs)
+            # self.detect_violation(self, results, g_src_map, global_problematic_pcs)
+            # self.detect_reentrancy(self, results, g_src_map, global_problematic_pcs)
+            # self.detect_proxy(self, results, g_src_map, global_problematic_pcs)
+            # self.detect_unlimited_minting(
+            #     self, results, g_src_map, global_problematic_pcs
+            # )
+            # self.detect_public_burn(self, results, g_src_map, global_problematic_pcs)
+            global pa
+            global uf
+            global ete
+            pa = PrivilegedAddressDefect(results["analysis"]["privileged_address"])
+            uf = UnrestrictedFromDefect(results["analysis"]["unrestricted_from_and_owner_inconsistency"])
+            ete = EmptyTransferEventDefect(results["analysis"]["empty_transfer_event"])
 
             defect_table = Table()
 
@@ -53,21 +62,15 @@ class Identifier:
             defect_table.add_column("Location", justify="left", style="cyan")
 
             defect_table.add_row(
-                "Risky Mutable Proxy", str(proxy.is_defective()), str(proxy)
+                "Privileged Address\n", str(pa.is_defective()), str(pa)
             )
             defect_table.add_row(
-                "ERC-721 Reentrancy", str(reentrancy.is_defective()), str(reentrancy)
+                "Unrestricted 'from'/\nOwner Inconsistency\n", str(uf.is_defective()), str(uf)
             )
             defect_table.add_row(
-                "Unlimited Minting",
-                str(unlimited_minting.is_defective()),
-                str(unlimited_minting),
-            )
-            defect_table.add_row(
-                "Missing Requirements", str(violation.is_defective()), str(violation)
-            )
-            defect_table.add_row(
-                "Public Burn", str(public_burn.is_defective()), str(public_burn)
+                "Empty Transfer Event",
+                str(ete.is_defective()),
+                str(ete),
             )
 
             param_table = Table()
@@ -95,7 +98,7 @@ class Identifier:
             state_table.add_row(param_table)
             state_table.add_row(instruct)
 
-            reporter = Table(title="NFTGuard GENESIS v0.0.1")
+            reporter = Table(title="WakeMint GENESIS v0.0.1")
             reporter.add_column("Defect Detection", justify="center")
             reporter.add_column("Execution States", justify="center")
             reporter.add_row(defect_table, state_table)
@@ -170,13 +173,11 @@ class Identifier:
         results["bool_defect"]["burn"] = public_burn.is_defective()
 
     def log_info():
-        global reentrancy
-        global violation
-        global proxy
-        global unlimited_minting
-        global public_burn
+        global pa
+        global uf
+        global ete
 
-        defects = [reentrancy, violation, proxy, unlimited_minting, public_burn]
+        defects = [pa, uf, ete]
 
         for defect in defects:
             s = str(defect)
@@ -184,13 +185,11 @@ class Identifier:
                 log.info(s)
 
     def defect_found(g_src_map):
-        global reentrancy
-        global violation
-        global proxy
-        global unlimited_minting
-        global public_burn
+        global pa
+        global uf
+        global ete
 
-        defects = [reentrancy, violation, proxy, unlimited_minting, public_burn]
+        defects = [pa, uf, ete]
 
         for defect in defects:
             if defect.is_defective():

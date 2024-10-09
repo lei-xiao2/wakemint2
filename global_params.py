@@ -37,12 +37,14 @@ LOOP_LIMIT = 200
 
 GENERATE_TEST_CASES = 0
 
-# Run NFTGuard in parallel
+# Run WakeMint in parallel
 PARALLEL = 0
 
 SOLC_SWITCH = 0
 
 SOLC_VERSION = None
+
+IS_LOW_VERSION = False
 
 # Iterable of targeted smart contract names
 TARGET_CONTRACTS = None

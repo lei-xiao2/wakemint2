@@ -337,3 +337,305 @@ def run_command_with_err(cmd):
     out = out.decode("utf-8", "strict")
     err = err.decode("utf-8", "strict")
     return out, err
+
+def find_owner_name(contract):
+    content = None
+    owner_name = None
+    functions_list = ["transferFrom", "safeTransferFrom"]
+    visited_functiosn = []
+    with open("temp.json", "r", encoding="utf-8") as f:
+        content = json.loads(f.read())
+        
+        contracts = content["contractsByName"]
+            
+        while(functions_list != []):
+            print(functions_list)
+            cur_function = functions_list.pop(0)
+            if cur_function in visited_functiosn:
+                continue
+            visited_functiosn.append(cur_function)
+            for contract in contracts:
+                nodes = content["contractsByName"][contract]["nodes"]
+                for node in nodes:
+                    if node["nodeType"] == "FunctionDefinition" and node["name"] == cur_function:
+                        try:
+                            statements = node["body"]["statements"]
+                        except:
+                            break
+                        for statement in statements:
+                            if "expression" in statement and statement["expression"]["nodeType"] == "FunctionCall":
+                                try:
+                                    functions_list.append(statement["expression"]["expression"]["name"])
+                                except:
+                                    break
+                            if "assignments" in statement:
+                                try:
+                                    if statement["initialValue"]["expression"]["name"] in ["ownerOf", "_ownerOf"]:
+                                        owner_name = statement["declarations"][0]["name"]
+                                except:
+                                    pass
+                                try:
+                                    if statement["initialValue"]["expression"]["memberName"] in ["ownerOf", "_ownerOf"]:
+                                        owner_name = statement["declarations"][0]["name"]
+                                except:
+                                    pass
+                                
+            if owner_name != None:
+                break
+    return owner_name
+
+def find_return_owner():
+    content = None
+    return_owner = None
+    functions_list = ["ownerOf", "_ownerOf"]
+
+    with open("temp.json", "r", encoding="utf-8") as f:
+        content = json.loads(f.read())
+        contracts = content["contractsByName"]
+            
+        while(functions_list != []):
+            cur_function = functions_list.pop(0)
+            queue = []
+            for contract in contracts:
+                try:
+                    nodes = content["contractsByName"][contract]["nodes"]
+                except:
+                    continue
+                for node in nodes:
+                    if node["nodeType"] == "FunctionDefinition" and node["name"] == cur_function:
+                        try:
+                            statements = node["body"]["statements"]
+                        except:
+                            continue
+                        for statement in statements:
+                            queue.append(statement)
+                        while(queue != []):
+                            item = queue.pop(0)
+                            try:
+                                if item["nodeType"] == "Return":
+                                    return_owner = "return " + item["expression"]["name"]
+                                    break
+                            except:
+                                pass
+                            try:
+                                for key in item:
+                                    value = item[key]
+                                    if type(value) == dict:
+                                        queue.append(value)
+                                    elif type(value) == list:
+                                        for i in value:
+                                            queue.append(i)
+                            except:
+                                pass
+                    if return_owner != None:
+                        break
+    return return_owner
+
+def find_return_owner_LV():
+    content = None
+    return_owner = None
+    functions_list = ["ownerOf", "_ownerOf"]
+
+    with open("temp.json", "r", encoding="utf-8") as f:
+        content = json.loads(f.read())
+        contracts = content["contractsByName"]
+            
+        while(functions_list != []):
+            cur_function = functions_list.pop(0)
+            queue = []
+            for contract in contracts:
+                try:
+                    children = content["contractsByName"][contract]["children"]
+                except:
+                    continue
+                for child in children:
+                    if child["name"] == "FunctionDefinition" and child["attributes"]["name"] == cur_function:
+                        try:
+                            grand_children = child["children"]
+                        except:
+                            continue
+                        for grand_child in grand_children:
+                            queue.append(grand_child)
+                        while(queue != []):
+                            item = queue.pop(0)
+                            try:
+                                if item["name"] == "Return":
+                                    return_owner = "return " + item["children"][0]["attributes"]["value"]
+                                    break
+                            except:
+                                pass
+                            try:
+                                for key in item:
+                                    value = item[key]
+                                    if type(value) == dict:
+                                        queue.append(value)
+                                    elif type(value) == list:
+                                        for i in value:
+                                            queue.append(i)
+                            except:
+                                pass
+                    if return_owner != None:
+                        break
+    return return_owner
+
+def get_target_functions(target_contract = ""):
+    target_function_hash = {}
+    with open("temp.json", "r", encoding="utf-8") as f:
+        content = json.loads(f.read())
+        contracts = content["contractsByName"]
+        function_info = {}
+        functions_of_existing_Transfer_event = []
+
+        for contract in contracts:
+            if contract != target_contract:
+                continue
+            nodes = content["contractsByName"][contract]["nodes"]
+            for node in nodes:
+                if node["nodeType"] == "FunctionDefinition":
+                    function_name = node["name"]
+                    function_info[function_name] = node
+        
+        for function in function_info:
+            info = function_info[function]
+            if "functionSelector" not in info:
+                continue
+            if function in target_function_hash:
+                continue
+            if function in functions_of_existing_Transfer_event:
+                hash = info["functionSelector"]
+                target_function_hash[function] = hash
+                continue
+
+            function_list = [function]
+            visited_functions = []
+            hash = info["functionSelector"]
+            while(function_list):
+                cur_function = function_list.pop(0)
+                if cur_function in visited_functions:
+                    continue
+                visited_functions.append(cur_function)
+                if cur_function in functions_of_existing_Transfer_event:
+                    target_function_hash[function] = hash
+                    break
+
+                queue = []
+                if cur_function in function_info:
+                    info = function_info[cur_function]
+                else:
+                    continue
+                try:
+                    statements = info["body"]["statements"]
+                except:
+                    continue
+                for statement in statements:
+                    queue.append(statement)
+                
+                while(queue):
+                    item = queue.pop(0)
+                    try:
+                        if item["eventCall"]["expression"]["name"] == "Transfer":
+                            functions_of_existing_Transfer_event.append(function)
+                            target_function_hash[function] = hash
+                            break
+                    except:
+                        pass
+                    try:
+                        if type(item) == dict and "nodeType" in item and item["nodeType"] == "FunctionCall":
+                            function_list.append(item["expression"]["name"])
+                    except:
+                        pass
+                    try:
+                        for key in item:
+                            value = item[key]
+                            if type(value) == dict:
+                                queue.append(value)
+                            elif type(value) == list:
+                                for i in value:
+                                    queue.append(i)
+                    except:
+                        pass
+                if function in target_function_hash:
+                    break
+    print(target_function_hash)
+    return target_function_hash
+
+def get_target_functions_LV(target_contract = ""):
+    target_function_hash = {}
+    with open("temp.json", "r", encoding="utf-8") as f:
+        content = json.loads(f.read())
+        contracts = content["contractsByName"]
+        function_info = {}
+        functions_of_existing_Transfer_event = []
+
+        for contract in contracts:
+            if contract != target_contract:
+                continue
+            children = content["contractsByName"][contract]["children"]
+            for child in children:
+                if child["name"] == "FunctionDefinition":
+                    function_name = child["attributes"]["name"]
+                    function_info[function_name] = child
+        
+        for function in function_info:
+            info = function_info[function]
+            # if "functionSelector" not in info:
+            #     continue
+            if function in target_function_hash:
+                continue
+            if function in functions_of_existing_Transfer_event:
+                # hash = info["functionSelector"]
+                target_function_hash[function] = ""
+                continue
+
+            function_list = [function]
+            hash = ""
+            visited_functions = []
+            while(function_list):
+                cur_function = function_list.pop(0)
+                if cur_function in visited_functions:
+                    continue
+                visited_functions.append(cur_function)
+                if cur_function in functions_of_existing_Transfer_event:
+                    target_function_hash[function] = hash
+                    break
+
+                queue = []
+                if cur_function in function_info:
+                    info = function_info[cur_function]
+                else:
+                    continue
+                try:
+                    children = info["children"]
+                except:
+                    continue
+                for child in children:
+                    queue.append(child)
+                
+                while(queue):
+                    item = queue.pop(0)
+                    try:
+                        if item["name"] == "EmitStatement" and item["children"][0]["children"][0]["attributes"]["value"] == "Transfer":
+                            functions_of_existing_Transfer_event.append(function)
+                            target_function_hash[function] = hash
+                            break
+                    except:
+                        pass
+                    try:
+                        if type(item) == dict and item["name"] == "FunctionCall":
+                            function_list.append(item["children"][0]["attributes"]["value"])
+                    except:
+                        pass
+                    try:
+                        for key in item:
+                            value = item[key]
+                            if type(value) == dict:
+                                queue.append(value)
+                            elif type(value) == list:
+                                for i in value:
+                                    queue.append(i)
+                    except:
+                        pass
+                if function in target_function_hash:
+                    break
+    print(target_function_hash)
+    return target_function_hash

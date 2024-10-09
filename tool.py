@@ -5,12 +5,15 @@ import logging
 import os
 import re
 import subprocess
-
-from crawler.crawl import crawl_contract
+import json
 import global_params
+from crawler.crawl import crawl_contract
+
 from cfg_builder import sym_exec
 from cfg_builder.utils import run_command
 from inputter.input_helper import InputHelper
+from inputter.solc_version_switcher import *
+from inputter.input_helper_oyente import InputHelper as InputHelerOyente
 
 
 def cmd_exists(cmd):
@@ -99,6 +102,7 @@ def has_dependencies_installed():
     else:
         cmd = "solc --version"
         out = run_command(cmd).strip()
+        print("out: ", out)
         solc_version = re.findall(r"Version: (\d*.\d*.\d*)", out)[0]
         tested_solc_version = "0.8.16"
         if compare_versions(solc_version, tested_solc_version) > 0:
@@ -128,7 +132,8 @@ def run_solidity_analysis(inputs):
     # for our tool, we must find some key features
     for inp in inputs:
         logging.info("contract %s:", inp["contract"])
-
+        with open("temp.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(inp["source_map"].ast_helper.contracts))
         result, return_code = sym_exec.run(
             disasm_file=inp["disasm_file"],
             source_map=inp["source_map"],
@@ -159,7 +164,8 @@ def analyze_solidity(input_type="solidity"):
         integer: The exit status of the execution.
     """
     global args
-
+    # print(global_params.SOLC_VERSION)
+    # return
     if input_type == "solidity":
         helper = InputHelper(
             InputHelper.SOLIDITY,
@@ -169,6 +175,18 @@ def analyze_solidity(input_type="solidity"):
             evm=args.evm,
             compilation_err=args.compilation_error,
         )
+
+        switcher = SolidityVersionSwitcher(helper.target)
+        solidity_code = switcher.load_solidity_code()
+        version_info = switcher.extract_solidity_version(solidity_code)
+        if version_info.startswith('0.4') or version_info.startswith('0.5'):
+            global_params.IS_LOW_VERSION = True
+            helper = InputHelerOyente(InputHelerOyente.SOLIDITY,
+            source=args.source,
+            allow_paths=args.allow_paths,
+            remap=args.remap,
+            evm=args.evm,
+            compilation_err=args.compilation_error,)
     else:
         return
     inputs = helper.get_inputs(global_params.TARGET_CONTRACTS)
@@ -240,7 +258,7 @@ def main():
     )
 
     parser.add_argument(
-        "--version", action="version", version="NFTGuard version 0.1.0 - Boom"
+        "--version", action="version", version="WakeMint version 0.1.0 - Boom"
     )
 
     parser.add_argument(
@@ -318,7 +336,7 @@ def main():
     parser.add_argument(
         "-pl",
         "--parallel",
-        help="Run NFTGuard in parallel. Note: The performance may depend on the contract",
+        help="Run WakeMint in parallel. Note: The performance may depend on the contract",
         action="store_true",
     )
     parser.add_argument(
@@ -399,9 +417,11 @@ def main():
 
     # analyze Solidity source code
     exit_code = analyze_solidity()
+    
 
     exit(exit_code)
 
 
 if __name__ == "__main__":
     main()
+

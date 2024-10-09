@@ -197,9 +197,11 @@ class SourceMap:
             cls.parent_filename,
             " ".join(remap),
         )
-        print(cmd)
+        
         out = run_command(cmd)
         out = json.loads(out)
+        # with open("try.json", "w", encoding="utf-8") as f:
+        #     f.write(json.dumps(out))
         return out["contracts"]
 
     def _get_positions(self):

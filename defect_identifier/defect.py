@@ -75,6 +75,53 @@ class Defect:
 
 
 # define 5 defects (for more defects, declare more defect classes)
+class PrivilegedAddressDefect():
+    def __init__(self, analysis):
+        self.name = "Privileged Address Defect"
+        self.analysis = analysis
+
+    def is_defective(self):
+        return bool(self.analysis)
+    
+    def __str__(self):
+        s = ""
+        for item in self.analysis:
+            s += "\n" + item
+        return s.lstrip("\n")
+
+class UnrestrictedFromDefect():
+    def __init__(self, analysis):
+        self.name = "Unrestricted 'from' Defect"
+        self.analysis = analysis
+    
+    def is_defective(self):
+        return bool(self.analysis)
+    
+    def __str__(self):
+        s = ""
+        for item in self.analysis:
+            s += "\n" + item
+        return s.lstrip("\n")
+
+class OwnerInconsistencyDefect(Defect):
+    def __init__(self, source_map, pcs):
+        self.name = "Owner Inconsistency Defect"
+        Defect.__init__(self, source_map, pcs)
+
+class  EmptyTransferEventDefect():
+    def __init__(self, analysis):
+        self.name = " Empty Transfer Event Defect"
+        self.analysis = analysis
+    
+    def is_defective(self):
+        return bool(self.analysis)
+    
+    def __str__(self):
+        s = ""
+        for item in self.analysis:
+            s += "\n" + item
+        return s.lstrip("\n")
+
 class ViolationDefect(Defect):
     def __init__(self, source_map, pcs):
         self.name = "ERC721 Standard Violation Defect"
