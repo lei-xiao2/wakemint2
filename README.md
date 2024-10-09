@@ -1,5 +1,5 @@
 <p>
-  <img alt="Static Badge" src="https://img.shields.io/badge/python-3.6-blue">
+  <img alt="Static Badge" src="https://img.shields.io/badge/python-3.8-blue">
   <img alt="Static Badge" src="https://img.shields.io/badge/ubuntu-20.04-yellow">
   <a href="doc url" target="_blank">
     <img alt="Documentation" src="https://img.shields.io/badge/documentation-yes-brightgreen.svg" />
@@ -8,15 +8,16 @@
 
 
 
+
 <div align="center">
   <h3 align="center">WakeMint</h3>
-
   <p align="center">
-    1. <a href='./defects_definition/README.md'>Datasets</a> for sleepminting defect in NFT-related contract .
+    1. Datasets for sleepminting defect in NFT-related contract .
     <br/>
     2. Tool WakeMint for detecting sleepminting.
     <br />
   </p>
+
 
 ​	
 
