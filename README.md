@@ -17,12 +17,21 @@
     2. Tool WakeMint for detecting sleepminting.
     <br />
   </p>
-</div>
 
 
-​	
+## Project Structure
 
-## Prerequisites
+- `experiment`: the result of our conducted experiments.
+- `test`: some contracts for tool testing.
+- Other directories are the tool's source codes.
+
+There are corresponding README files in the core folders such as `experiment` for detailed introduction.
+
+
+
+## Tool
+
+### Prerequisites
 
 -   Python >= 3.8
 -   evm >= 1.10.21.
@@ -41,7 +50,7 @@
     pip3 install solc-select
     ```
 
-## Install
+### Install
 
 1. Python dependencies installation.
 
@@ -49,14 +58,14 @@
 pip3 install -r requirements.txt
 ```
 
-## Usage
+### Usage
 
-### Local
+#### Local
 
 To test one solidity file, use `-cnames` to specify contract name.
 
 ```sh
-python3 tool.py -s test/EvohFixedMint.sol -cnames EvohFixedMint -j -glt 200 -ll 100 -dl 500
+python3 tool.py -s test/EvohFixedMint.sol -cnames EvohFixedMint
 ```
 
 To test a specifc function, use `-fselector` to specifiy the function selector (`-as` option is provided for automatical solc version switch).
@@ -64,17 +73,3 @@ To test a specifc function, use `-fselector` to specifiy the function selector (
 ```sh
 python3 tool.py -s test/EvohFixedMint.sol -cnames EvohFixedMint -fselector 23b872dd -as
 ```
-
-
-Other utils: contract/project source code crawler (with complete code structure) from EtherScan. See <a href='./crawler/crawl.py'>crawler.py</a>.
-
-```sh
-python3 crawl.py --dir ./0x --caddress 0x # 0x is the contract address
-```
-
-Usage in the WakeMint CLI.
-
-```sh
-python3 tool.py -caddress 0xa4631a191044096834ce65d1ee86b16b171d8080 -cnames CreatureToadz -fselector 40c10f19
-```
-

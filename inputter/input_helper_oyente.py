@@ -6,7 +6,7 @@ import logging
 import json
 import global_params
 import six
-from oyente_resource.source_map import SourceMap
+from low_version_resource.source_map import SourceMap
 from crytic_compile import CryticCompile, InvalidCompilation
 from inputter.solc_version_switcher import *
 from inputter.slot_map import SlotMap

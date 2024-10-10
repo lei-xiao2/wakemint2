@@ -5,8 +5,8 @@ import json
 
 import global_params
 
-from oyente_resource.utils import run_command
-from oyente_resource.ast_helper import AstHelper
+from low_version_resource.utils import run_command
+from low_version_resource.ast_helper import AstHelper
 from inputter.slot_map import SlotMap
 
 class Source:

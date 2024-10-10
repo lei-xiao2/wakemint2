@@ -1,5 +1,5 @@
-from oyente_resource.utils import run_command
-from oyente_resource.ast_walker import AstWalker
+from low_version_resource.utils import run_command
+from low_version_resource.ast_walker import AstWalker
 import json
 
 class AstHelper:
