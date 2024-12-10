@@ -15,5 +15,4 @@ The results of our conducted experiments.
   - `true_positives` and `false_positives`: classification and cases of true positives and false positives of WakeMint.
   - `false_negatives`: analysis and cases of false_negatives from `negatives_samples`
 - ``negatives_samples``: randomly sampled dataset with a confidence interval of 10 and a confidence level of 95% on contracts were not reported.
-- `sleepminting.csv`: detection result of WakeMint.
-- `Dataset.zip`: source code of contracts that were used in our dataset.
+- `sleepminting.csv`: contract addresses and corresponding detection results.
